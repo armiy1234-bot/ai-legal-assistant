@@ -4,12 +4,12 @@ import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import { AiAssistant } from '@/components/sidebar/ai-assistant';
 
-const inter = Inter({ subsets: ['cyrillic', 'latin'] });
+const inter = Inter({ subsets: ['cyrillic', 'latin'], weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
-  title: 'AI-Юрист — Юридическая помощь на базе ИИ',
-  description: 'Бесплатные юридические консультации на основе актуальной судебной практики РФ и СНГ. Авторизация через ВК, Telegram, телефон.',
-  keywords: ['юрист', 'юридическая консультация', 'судебная практика', 'ИИ', 'правовая помощь'],
+  title: 'LexAI — Юридическая помощь на базе искусственного интеллекта',
+  description: 'Бесплатные юридические консультации на основе актуальной судебной практики РФ и СНГ. Анализ ситуации, рекомендации и пошаговый план действий.',
+  keywords: ['юрист', 'юридическая консультация', 'судебная практика', 'ИИ', 'правовая помощь', 'LexAI'],
 };
 
 export default function RootLayout({
@@ -22,18 +22,13 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-background`}>
         <SessionProvider>
           <div className="flex h-screen">
-            {/* Боковая панель с ИИ — всегда доступна */}
-            <aside className="w-80 border-r hidden md:block">
+            <aside className="w-96 border-r border-border/50 bg-card hidden md:flex md:flex-col">
               <AiAssistant />
             </aside>
-            
-            {/* Основной контент */}
             <main className="flex-1 overflow-y-auto">
               {children}
             </main>
-            
-            {/* Мобильная версия: ИИ в нижнем листе */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background z-50">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border/50 bg-background/95 backdrop-blur-lg z-50">
               <AiAssistant compact />
             </div>
           </div>
