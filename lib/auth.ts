@@ -1,7 +1,6 @@
-import { NextAuthOptions } from 'next-auth';
+import NextAuth from 'next-auth';
 import { SupabaseAdapter } from '@auth/supabase-adapter';
 import VkProvider from 'next-auth/providers/vk';
-import TelegramProvider from 'next-auth/providers/telegram';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { createClient } from '@supabase/supabase-js';
 
@@ -10,7 +9,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: SupabaseAdapter({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -29,8 +28,6 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    // Telegram требует кастомной реализации через bot API
-    // Для MVP можно использовать Credentials + отправку кода
     CredentialsProvider({
       id: 'telegram',
       name: 'Telegram',
@@ -41,19 +38,14 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.telegramId) return null;
-        
-        // В реальном проекте: верификация через webhook от бота
-        // Для MVP: создаём пользователя "как есть"
         const { data: existing } = await supabase
           .from('users')
           .select('id')
           .eq('telegram_id', credentials.telegramId)
           .single();
-          
         if (existing) {
           return { id: existing.id, telegramId: credentials.telegramId };
         }
-        
         const { data: newUser, error } = await supabase
           .from('users')
           .insert({
@@ -62,7 +54,6 @@ export const authOptions: NextAuthOptions = {
           })
           .select()
           .single();
-          
         if (error || !newUser) return null;
         return { id: newUser.id, telegramId: credentials.telegramId };
       },
@@ -75,24 +66,16 @@ export const authOptions: NextAuthOptions = {
         code: { label: 'Код подтверждения', type: 'text' },
       },
       async authorize(credentials) {
-        // Для MVP: упрощённая авторизация по телефону
-        // В продакшене: использовать Firebase Auth или Supabase SMS
         if (!credentials?.phone || !credentials?.code) return null;
-        
-        // Здесь должна быть проверка кода через сервис смс
-        // Для демо: принимаем любой 6-значный код
         if (credentials.code.length !== 6) return null;
-        
         const { data: existing } = await supabase
           .from('users')
           .select('id')
           .eq('phone', credentials.phone)
           .single();
-          
         if (existing) {
           return { id: existing.id, phone: credentials.phone };
         }
-        
         const { data: newUser } = await supabase
           .from('users')
           .insert({
@@ -101,7 +84,6 @@ export const authOptions: NextAuthOptions = {
           })
           .select()
           .single();
-          
         if (!newUser) return null;
         return { id: newUser.id, phone: credentials.phone };
       },
@@ -120,7 +102,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 дней
+    maxAge: 30 * 24 * 60 * 60,
   },
   debug: process.env.NODE_ENV === 'development',
-};
+});

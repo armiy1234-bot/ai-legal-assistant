@@ -6,14 +6,13 @@ import { ratelimit } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import { legalQueries, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
