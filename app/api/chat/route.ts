@@ -3,10 +3,12 @@ import { streamText } from 'ai';
 import { getMistralModel, LEGAL_SYSTEM_PROMPT } from '@/lib/ai/mistral-client';
 import { sanitizePrompt, sanitizeResponse } from '@/lib/ai/prompt-guard';
 import { ratelimit } from '@/lib/rate-limit';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { legalQueries, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getAuthSession } from '@/lib/auth';
+
+const db = getDb();
 
 export const maxDuration = 30;
 

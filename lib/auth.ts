@@ -1,4 +1,6 @@
 import NextAuth from 'next-auth';
+import { createClient } from '@supabase/supabase-js';
+
 // В начале файла, перед использованием Supabase
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
