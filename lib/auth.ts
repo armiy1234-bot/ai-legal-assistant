@@ -1,32 +1,24 @@
 import NextAuth from 'next-auth';
-import { createClient } from '@supabase/supabase-js';
-
-// В начале файла, перед использованием Supabase
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  if (!url || !key) {
-    console.warn('⚠️ Supabase credentials missing. Auth will be disabled.');
-    return null;
-  }
-  
-  return createClient(url, key);
-}
-
-const supabase = getSupabaseClient();
-import { SupabaseAdapter } from '@auth/supabase-adapter';
 import VkProvider from 'next-auth/providers/vk';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 let _handlers: { GET: (...args: any[]) => Promise<Response>; POST: (...args: any[]) => Promise<Response> } | undefined;
 let _auth: (() => Promise<{ user?: { id: string } } | null>) | undefined;
 
-function init() {
+async function init() {
   if (_handlers) return;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !secret) {
+    // At runtime, credentials must be present
+    // At build time - skip, will retry at runtime
+    if (process.env.VERCEL && !process.env.CI) return;
+    throw new Error('Missing Supabase credentials for auth initialization');
+  }
+
+  const { SupabaseAdapter } = await import('@auth/supabase-adapter');
 
   const result = NextAuth({
     adapter: SupabaseAdapter({ url, secret }),
@@ -53,7 +45,7 @@ function init() {
           username: { label: 'Username', type: 'text' },
         },
         async authorize(credentials) {
-          const telegramId = credentials?.telegramId as string | undefined;
+          const telegramId = (credentials?.telegramId as string) || '';
           if (!telegramId) return null;
           const { createClient } = await import('@supabase/supabase-js');
           const supabase = createClient(
@@ -62,8 +54,8 @@ function init() {
           );
           const { data: existing } = await supabase.from('users').select('id').eq('telegram_id', telegramId).single();
           if (existing) return { id: existing.id, telegramId };
-          const { data: newUser, error } = await supabase.from('users').insert({ telegram_id: telegramId, role: 'user' }).select().single();
-          if (error || !newUser) return null;
+          const { data: newUser } = await supabase.from('users').insert({ telegram_id: telegramId, role: 'user' }).select().single();
+          if (!newUser) return null;
           return { id: newUser.id, telegramId };
         },
       }),
@@ -75,11 +67,14 @@ function init() {
           code: { label: 'Код подтверждения', type: 'text' },
         },
         async authorize(credentials) {
-          const phone = credentials?.phone as string | undefined;
-          const code = credentials?.code as string | undefined;
+          const phone = (credentials?.phone as string) || '';
+          const code = (credentials?.code as string) || '';
           if (!phone || !code || code.length !== 6) return null;
           const { createClient } = await import('@supabase/supabase-js');
-          const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
           const { data: existing } = await supabase.from('users').select('id').eq('phone', phone).single();
           if (existing) return { id: existing.id, phone };
           const { data: newUser } = await supabase.from('users').insert({ phone, role: 'user' }).select().single();
@@ -103,12 +98,12 @@ function init() {
   _auth = result.auth;
 }
 
-export function getHandlers() {
-  init();
+export async function getHandlers() {
+  await init();
   return _handlers!;
 }
 
-export function getAuthSession() {
-  init();
+export async function getAuthSession() {
+  await init();
   return _auth!();
 }

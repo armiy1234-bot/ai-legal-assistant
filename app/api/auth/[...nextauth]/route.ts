@@ -5,5 +5,5 @@ export const revalidate = 0;
 import { getHandlers } from '@/lib/auth';
 import type { NextRequest } from 'next/server';
 
-export const GET = (req: NextRequest) => getHandlers().GET(req);
-export const POST = (req: NextRequest) => getHandlers().POST(req);
+export const GET = async (req: NextRequest) => (await getHandlers()).GET(req);
+export const POST = async (req: NextRequest) => (await getHandlers()).POST(req);
