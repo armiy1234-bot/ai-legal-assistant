@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.30",
+    "@auth/supabase-adapter": "^1.11.2",
     "@hookform/resolvers": "^3.3.4",
     "@langchain/community": "^0.0.40",
     "@langchain/core": "^0.1.50",
@@ -21,6 +22,7 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.39.7",
     "@upstash/ratelimit": "^1.0.1",
+    "@upstash/redis": "^1.38.0",
     "ai": "^3.0.24",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
