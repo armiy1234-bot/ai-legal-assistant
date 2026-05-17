@@ -6,13 +6,13 @@ import { ratelimit } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import { legalQueries, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { auth } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
+    const session = await getAuthSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       onFinish: async ({ text }) => {
+        if (!session?.user?.id) return;
         const sanitizedResponse = sanitizeResponse(text);
         await db.insert(legalQueries).values({
           userId: session.user.id,
