@@ -42,11 +42,14 @@ export async function POST(req: NextRequest) {
     const user = await db.query.users.findFirst({
       where: eq(users.id, session.user.id),
     });
-    
-    const isPremium = user?.role === 'premium_user';
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const isPremium = user.role === 'premium_user';
     const today = new Date().toISOString().split('T')[0];
-    
-    if (!isPremium && user?.lastQueryDate?.toISOString().split('T')[0] === today) {
+
+    if (!isPremium && user.lastQueryDate?.toISOString().split('T')[0] === today) {
       const freeLimit = parseInt(process.env.FREE_QUERIES_PER_DAY || '5');
       if ((user.dailyFreeQueries || 0) >= freeLimit) {
         return NextResponse.json(
@@ -113,7 +116,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return result.toDataStreamResponse({
+    return result.toTextStreamResponse({
       headers: { 'X-Request-Id': crypto.randomUUID() },
     });
 

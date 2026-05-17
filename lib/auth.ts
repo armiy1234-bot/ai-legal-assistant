@@ -37,25 +37,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         username: { label: 'Username', type: 'text' },
       },
       async authorize(credentials) {
-        if (!credentials?.telegramId) return null;
+        const telegramId = credentials?.telegramId as string | undefined;
+        if (!telegramId) return null;
         const { data: existing } = await supabase
           .from('users')
           .select('id')
-          .eq('telegram_id', credentials.telegramId)
+          .eq('telegram_id', telegramId)
           .single();
         if (existing) {
-          return { id: existing.id, telegramId: credentials.telegramId };
+          return { id: existing.id, telegramId: telegramId };
         }
         const { data: newUser, error } = await supabase
           .from('users')
           .insert({
-            telegram_id: credentials.telegramId,
+            telegram_id: telegramId,
             role: 'user',
           })
           .select()
           .single();
         if (error || !newUser) return null;
-        return { id: newUser.id, telegramId: credentials.telegramId };
+        return { id: newUser.id, telegramId: telegramId };
       },
     }),
     CredentialsProvider({
@@ -66,26 +67,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         code: { label: 'Код подтверждения', type: 'text' },
       },
       async authorize(credentials) {
-        if (!credentials?.phone || !credentials?.code) return null;
-        if (credentials.code.length !== 6) return null;
+        const phone = credentials?.phone as string | undefined;
+        const code = credentials?.code as string | undefined;
+        if (!phone || !code) return null;
+        if (code.length !== 6) return null;
         const { data: existing } = await supabase
           .from('users')
           .select('id')
-          .eq('phone', credentials.phone)
+          .eq('phone', phone)
           .single();
         if (existing) {
-          return { id: existing.id, phone: credentials.phone };
+          return { id: existing.id, phone: phone };
         }
         const { data: newUser } = await supabase
           .from('users')
           .insert({
-            phone: credentials.phone,
+            phone: phone,
             role: 'user',
           })
           .select()
           .single();
         if (!newUser) return null;
-        return { id: newUser.id, phone: credentials.phone };
+        return { id: newUser.id, phone: phone };
       },
     }),
   ],

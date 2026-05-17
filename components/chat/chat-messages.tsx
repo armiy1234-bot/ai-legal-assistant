@@ -2,15 +2,25 @@
 
 import { Scale, User, Loader2 } from 'lucide-react';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
+interface ChatMessagesProps {
+  messages: Array<{
+    id: string;
+    role: 'system' | 'user' | 'assistant';
+    parts?: Array<{ type: string; text?: string }>;
+    content?: string;
+  }>;
+  isLoading?: boolean;
 }
 
-interface ChatMessagesProps {
-  messages: Message[];
-  isLoading?: boolean;
+function getMessageContent(msg: ChatMessagesProps['messages'][0]): string {
+  if (msg.content) return msg.content;
+  if (msg.parts) {
+    return msg.parts
+      .filter((p): p is { type: string; text: string } => p.type === 'text' && !!p.text)
+      .map(p => p.text)
+      .join('\n');
+  }
+  return '';
 }
 
 export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
@@ -39,31 +49,35 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
 
   return (
     <div className="space-y-4">
-      {messages.map((msg) => (
-        <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            msg.role === 'user'
-              ? 'bg-gradient-to-br from-muted-foreground/20 to-muted'
-              : 'bg-gradient-to-br from-primary/10 to-emerald-50'
-          }`}>
-            {msg.role === 'user' ? <User className="w-4 h-4 text-muted-foreground" /> : <Scale className="w-4 h-4 text-primary" />}
-          </div>
-          <div className={`max-w-[85%] ${msg.role === 'user' ? 'text-right' : ''}`}>
-            <div className={`inline-block rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+      {messages.map((msg) => {
+        if (msg.role === 'system') return null;
+        const content = getMessageContent(msg);
+        return (
+          <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
               msg.role === 'user'
-                ? 'bg-primary text-primary-foreground rounded-tr-md'
-                : 'bg-muted/70 text-foreground rounded-tl-md border border-border/30'
+                ? 'bg-gradient-to-br from-muted-foreground/20 to-muted'
+                : 'bg-gradient-to-br from-primary/10 to-emerald-50'
             }`}>
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              {msg.role === 'user' ? <User className="w-4 h-4 text-muted-foreground" /> : <Scale className="w-4 h-4 text-primary" />}
             </div>
-            <p className={`text-[11px] text-muted-foreground mt-1 ${
-              msg.role === 'user' ? 'text-right' : 'text-left'
-            }`}>
-              {msg.role === 'user' ? 'Вы' : 'LexAI'}
-            </p>
+            <div className={`max-w-[85%] ${msg.role === 'user' ? 'text-right' : ''}`}>
+              <div className={`inline-block rounded-2xl px-4 py-3 text-sm leading-relaxed text-left ${
+                msg.role === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-tr-md'
+                  : 'bg-muted/70 text-foreground rounded-tl-md border border-border/30'
+              }`}>
+                <p className="whitespace-pre-wrap">{content}</p>
+              </div>
+              <p className={`text-[11px] text-muted-foreground mt-1 ${
+                msg.role === 'user' ? 'text-right' : 'text-left'
+              }`}>
+                {msg.role === 'user' ? 'Вы' : 'LexAI'}
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       {isLoading && (
         <div className="flex gap-3">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/10 to-emerald-50 flex items-center justify-center flex-shrink-0">

@@ -1,16 +1,13 @@
 import { createOpenAI } from '@ai-sdk/openai';
 
-export const mistralChat = createOpenAI({
+const commonConfig = {
   baseURL: process.env.MISTRAL_BASE_URL || 'https://api.mistral.ai/v1',
   apiKey: process.env.MISTRAL_API_KEY || '',
-  compatibility: 'strict',
-});
+};
 
-export const mistralCoder = createOpenAI({
-  baseURL: process.env.MISTRAL_BASE_URL || 'https://api.mistral.ai/v1',
-  apiKey: process.env.MISTRAL_API_KEY || '',
-  compatibility: 'strict',
-});
+export const mistralChat = createOpenAI(commonConfig);
+
+export const mistralCoder = createOpenAI(commonConfig);
 
 export type MistralModel = 'chat' | 'coder';
 

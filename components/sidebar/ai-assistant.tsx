@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { Button } from '@/components/ui/button';
 import { ChatInput } from '@/components/chat/chat-input';
 import { ChatMessages } from '@/components/chat/chat-messages';
@@ -13,24 +14,33 @@ interface AiAssistantProps {
 }
 
 export function AiAssistant({ defaultCategory, compact = false }: AiAssistantProps) {
+  const [input, setInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(defaultCategory || '');
   const [showCategories, setShowCategories] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/chat',
-    body: {
-      category: selectedCategory,
-      useCoder: false,
-    },
-    onError: (err) => {
-      console.error('Chat error:', err);
-    },
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: {
+        category: selectedCategory,
+        useCoder: false,
+      },
+    }),
   });
+
+  const isLoading = status === 'streaming' || status === 'submitted';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    sendMessage({ text: input });
+    setInput('');
+  };
 
   const categories = [
     { value: '', label: 'Любая тема' },
@@ -104,7 +114,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
             <form onSubmit={handleSubmit} className="flex gap-2">
               <ChatInput
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => setInput(e.target.value)}
                 placeholder="Спросите о законе..."
                 disabled={isLoading}
                 compact
@@ -132,7 +142,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <div className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-muted/50 text-xs text-muted-foreground leading-relaxed">
           <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>Ответы ИИ основаны на анализе судебной практики и не являются официальной юридической консультацией</span>
+          <span>Ответы LexAI основаны на анализе судебной практики и не являются официальной юридической консультацией</span>
         </div>
         <ChatMessages messages={messages} isLoading={isLoading} />
         <div ref={messagesEndRef} />
@@ -141,7 +151,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
         <form onSubmit={handleSubmit} className="flex gap-2">
           <ChatInput
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Опишите вашу ситуацию..."
             disabled={isLoading}
           />
