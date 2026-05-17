@@ -1,4 +1,18 @@
 import NextAuth from 'next-auth';
+// В начале файла, перед использованием Supabase
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    console.warn('⚠️ Supabase credentials missing. Auth will be disabled.');
+    return null;
+  }
+  
+  return createClient(url, key);
+}
+
+const supabase = getSupabaseClient();
 import { SupabaseAdapter } from '@auth/supabase-adapter';
 import VkProvider from 'next-auth/providers/vk';
 import CredentialsProvider from 'next-auth/providers/credentials';
