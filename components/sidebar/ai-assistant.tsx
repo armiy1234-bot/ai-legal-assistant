@@ -6,7 +6,8 @@ import { DefaultChatTransport } from 'ai';
 import { Button } from '@/components/ui/button';
 import { ChatInput } from '@/components/chat/chat-input';
 import { ChatMessages } from '@/components/chat/chat-messages';
-import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown } from 'lucide-react';
+import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2 } from 'lucide-react';
+import { categories as legalCategories, getCategoryById } from '@/lib/categories';
 
 interface AiAssistantProps {
   defaultCategory?: string;
@@ -42,15 +43,16 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
     setInput('');
   };
 
-  const categories = [
-    { value: '', label: 'Любая тема' },
-    { value: 'civil', label: 'Гражданское' },
-    { value: 'criminal', label: 'Уголовное' },
-    { value: 'family', label: 'Семейное' },
-    { value: 'labor', label: 'Трудовое' },
-    { value: 'arbitration', label: 'Арбитраж' },
-    { value: 'administrative', label: 'Административное' },
-  ];
+  const iconMap: Record<string, React.ReactNode> = {
+    FileText: <FileText className="w-3.5 h-3.5" />,
+    Heart: <Heart className="w-3.5 h-3.5" />,
+    Briefcase: <Briefcase className="w-3.5 h-3.5" />,
+    Shield: <Shield className="w-3.5 h-3.5" />,
+    Home: <Home className="w-3.5 h-3.5" />,
+    Car: <Car className="w-3.5 h-3.5" />,
+    Gavel: <Gavel className="w-3.5 h-3.5" />,
+    Building2: <Building2 className="w-3.5 h-3.5" />,
+  };
 
   const header = (
     <div className="flex items-center gap-3 px-5 py-4 border-b border-border/50">
@@ -74,21 +76,39 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
         onClick={() => setShowCategories(!showCategories)}
         className="w-full flex items-center justify-between px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border-b border-border/50 bg-muted/30"
       >
-        <span>{categories.find(c => c.value === selectedCategory)?.label || 'Любая тема'}</span>
+        <span className="flex items-center gap-2">
+          {selectedCategory ? (
+            <>
+              <span className={`w-2 h-2 rounded-full ${getCategoryById(selectedCategory)?.color || 'bg-primary'}`} />
+              {getCategoryById(selectedCategory)?.label || 'Любая тема'}
+            </>
+          ) : 'Любая тема'}
+        </span>
         <ChevronDown className={`w-4 h-4 transition-transform ${showCategories ? 'rotate-180' : ''}`} />
       </button>
       {showCategories && (
-        <div className="absolute top-full left-0 right-0 z-10 bg-card border border-border/50 rounded-b-xl shadow-apple-lg p-2 space-y-1">
-          {categories.map((cat) => (
+        <div className="absolute top-full left-0 right-0 z-10 bg-card border border-border/50 rounded-b-xl shadow-apple-lg p-2 space-y-1 max-h-64 overflow-y-auto">
+          <button
+            onClick={() => { setSelectedCategory(''); setShowCategories(false); }}
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+              selectedCategory === ''
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Любая тема
+          </button>
+          {legalCategories.map((cat) => (
             <button
-              key={cat.value}
-              onClick={() => { setSelectedCategory(cat.value); setShowCategories(false); }}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                selectedCategory === cat.value
+              key={cat.id}
+              onClick={() => { setSelectedCategory(cat.id); setShowCategories(false); }}
+              className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                selectedCategory === cat.id
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'hover:bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
+              <span className={`w-2 h-2 rounded-full ${cat.color}`} />
               {cat.label}
             </button>
           ))}

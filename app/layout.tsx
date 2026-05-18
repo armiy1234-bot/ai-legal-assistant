@@ -2,6 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
+import { ThemeProvider } from '@/lib/theme-provider';
+import { I18nProvider } from '@/lib/i18n';
 import { AiAssistant } from '@/components/sidebar/ai-assistant';
 
 const inter = Inter({ subsets: ['cyrillic', 'latin'], weight: ['400', '500', '600', '700'] });
@@ -21,6 +23,8 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${inter.className} min-h-screen bg-background`}>
         <SessionProvider>
+          <I18nProvider>
+          <ThemeProvider>
           <div className="flex h-[100dvh]">
             <aside className="w-96 border-r border-border/50 bg-card hidden md:flex md:flex-col">
               <AiAssistant />
@@ -32,6 +36,8 @@ export default function RootLayout({
               <AiAssistant compact />
             </div>
           </div>
+          </ThemeProvider>
+          </I18nProvider>
         </SessionProvider>
       </body>
     </html>

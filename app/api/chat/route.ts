@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText } from 'ai';
 import { getMistralModel, LEGAL_SYSTEM_PROMPT } from '@/lib/ai/mistral-client';
+import { getCategoryById } from '@/lib/categories';
 import { sanitizePrompt, sanitizeResponse } from '@/lib/ai/prompt-guard';
 import { ratelimit } from '@/lib/rate-limit';
 import { getDb } from '@/lib/db';
@@ -75,6 +76,8 @@ export async function POST(req: NextRequest) {
       : '';
 
     const model = getMistralModel(useCoder ? 'coder' : 'chat');
+    const categoryData = category ? getCategoryById(category) : null;
+    const categoryPrompt = categoryData ? `\n\nКАТЕГОРИЯ: ${categoryData.label}. ${categoryData.prompt}` : '';
 
     const result = await streamText({
       model,
@@ -83,7 +86,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `${context}Вопрос пользователя: ${cleaned}\n\nОтвечай строго по инструкции выше.`,
+          content: `${context}${categoryPrompt}\n\nВопрос пользователя: ${cleaned}\n\nОтвечай строго по инструкции выше.`,
         },
       ],
       onFinish: async ({ text }) => {
