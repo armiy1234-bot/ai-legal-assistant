@@ -6,8 +6,10 @@ import { DefaultChatTransport } from 'ai';
 import { Button } from '@/components/ui/button';
 import { ChatInput } from '@/components/chat/chat-input';
 import { ChatMessages } from '@/components/chat/chat-messages';
-import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2 } from 'lucide-react';
+import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2, Download } from 'lucide-react';
 import { categories as legalCategories, getCategoryById } from '@/lib/categories';
+import { QueryCounter } from '@/components/query-counter';
+import { useSession } from 'next-auth/react';
 
 interface AiAssistantProps {
   defaultCategory?: string;
@@ -15,6 +17,7 @@ interface AiAssistantProps {
 }
 
 export function AiAssistant({ defaultCategory, compact = false }: AiAssistantProps) {
+  const { data: session } = useSession();
   const [input, setInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(defaultCategory || '');
   const [showCategories, setShowCategories] = useState(false);
@@ -43,6 +46,25 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
     setInput('');
   };
 
+  const exportToPDF = () => {
+    if (messages.length === 0) return;
+    const content = messages.map(m => {
+      const role = m.role === 'user' ? 'Вы' : 'LexAI';
+      const text = 'text' in m ? String(m.text) : JSON.stringify(m);
+      return `${role}:\n${text}\n`;
+    }).join('\n---\n\n');
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lexai-consultation-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const iconMap: Record<string, React.ReactNode> = {
     FileText: <FileText className="w-3.5 h-3.5" />,
     Heart: <Heart className="w-3.5 h-3.5" />,
@@ -63,9 +85,22 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
         <h2 className="font-semibold text-sm">LexAI</h2>
         <p className="text-[11px] text-muted-foreground">Юридический ассистент</p>
       </div>
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
-        <Sparkles className="w-3 h-3" />
-        Online
+      <div className="flex items-center gap-2">
+        {session?.user?.id && <QueryCounter userId={session.user.id} />}
+        {messages.length > 0 && (
+          <button
+            onClick={exportToPDF}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Сохранить консультацию"
+          >
+            <Download className="w-3 h-3" />
+            <span className="hidden sm:inline">Сохранить</span>
+          </button>
+        )}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
+          <Sparkles className="w-3 h-3" />
+          Online
+        </div>
       </div>
     </div>
   );
