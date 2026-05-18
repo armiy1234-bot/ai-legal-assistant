@@ -21,14 +21,14 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${inter.className} min-h-screen bg-background`}>
         <SessionProvider>
-          <div className="flex h-screen">
+          <div className="flex h-[100dvh]">
             <aside className="w-96 border-r border-border/50 bg-card hidden md:flex md:flex-col">
               <AiAssistant />
             </aside>
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto pb-[280px] md:pb-0">
               {children}
             </main>
-            <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border/50 bg-background/95 backdrop-blur-lg z-50">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 h-[280px] border-t border-border/50 bg-background/95 backdrop-blur-lg z-50">
               <AiAssistant compact />
             </div>
           </div>

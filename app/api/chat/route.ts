@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
     const result = await streamText({
       model,
       system: LEGAL_SYSTEM_PROMPT,
+      maxRetries: 2,
       messages: [
         {
           role: 'user',
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
 
           if (lastDate === today) {
             await db.update(users)
-              .set({ dailyFreeQueries: (user.dailyFreeQueries || 0) + 1 })
+              .set({ dailyFreeQueries: (user!.dailyFreeQueries || 0) + 1 })
               .where(eq(users.id, session.user.id));
           } else {
             await db.update(users)
@@ -114,12 +115,31 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return result.toDataStreamResponse({
+    return result.toTextStreamResponse({
       headers: { 'X-Request-Id': crypto.randomUUID() },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[CHAT_API] Error:', error);
+    // Обработка специфических ошибок Mistral
+    if (error?.status === 429) {
+      return NextResponse.json(
+        { error: 'Сервис временно перегружен. Попробуйте через минуту.' },
+        { status: 503 }
+      );
+    }
+    if (error?.status >= 500 || error?.code === 'ECONNRESET' || error?.code === 'ETIMEDOUT') {
+      return NextResponse.json(
+        { error: 'Ошибка соединения с AI-сервисом. Повторите запрос.' },
+        { status: 502 }
+      );
+    }
+    if (error?.name === 'TimeoutError' || error?.message?.includes('timeout')) {
+      return NextResponse.json(
+        { error: 'AI-сервис не ответил вовремя. Попробуйте сократить вопрос.' },
+        { status: 504 }
+      );
+    }
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }

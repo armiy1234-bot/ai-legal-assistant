@@ -7,18 +7,25 @@ const hasUpstashEnv = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_
 const createRatelimit = () => {
   if (!hasUpstashEnv) {
     const store = new Map<string, { count: number; reset: number }>();
+    // Очистка устаревших записей каждые 10 минут
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of store) {
+        if (now > entry.reset) store.delete(key);
+      }
+    }, 600000);
     return {
       limit: async (id: string) => {
         const now = Date.now();
         const key = `${id}:${new Date().toISOString().split('T')[0]}`;
-        const entry = store.get(key) || { count: 0, reset: now + 86400000 };
-        if (now > entry.reset) {
+        const entry = store.get(key);
+        if (!entry || now > entry.reset) {
           store.set(key, { count: 1, reset: now + 86400000 });
-          return { success: true };
+          return { success: true, limit: 30, remaining: 29, reset: now + 86400000 };
         }
         entry.count++;
-        store.set(key, entry);
-        return { success: entry.count <= 30 };
+        const success = entry.count <= 30;
+        return { success, limit: 30, remaining: Math.max(0, 30 - entry.count), reset: entry.reset };
       },
     };
   }
