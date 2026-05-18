@@ -15,6 +15,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     VKProvider({
       clientId: process.env.VK_CLIENT_ID || "",
       clientSecret: process.env.VK_CLIENT_SECRET || "",
+      checks: [], // VK не поддерживает PKCE
+      authorization: {
+        params: { scope: "email" },
+      },
     }),
     EmailProvider({
       server: process.env.EMAIL_SERVER || {
