@@ -17,12 +17,12 @@ export const metadata: Metadata = {
   publisher: 'LexAI',
   robots: 'index, follow',
   alternates: {
-    canonical: 'https://ai-legal-assistant.vercel.app',
+    canonical: 'https://ai-legal-assistant-henna.vercel.app',
   },
   openGraph: {
     type: 'website',
     locale: 'ru_RU',
-    url: 'https://ai-legal-assistant.vercel.app',
+    url: 'https://ai-legal-assistant-henna.vercel.app',
     siteName: 'LexAI',
     title: 'LexAI — Бесплатный юридический AI-помощник',
     description: 'Бесплатные юридические консультации на основе актуальной судебной практики РФ и СНГ',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'LexAI — Бесплатный юридический AI-помощник',
     description: 'Бесплатные юридические консультации на основе актуальной судебной практики РФ и СНГ',
-    images: ['https://ai-legal-assistant.vercel.app/og-image.png'],
+    images: ['https://ai-legal-assistant-henna.vercel.app/og-image.png'],
   },
 };
 
