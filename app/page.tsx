@@ -11,7 +11,7 @@ import { Scale, Shield, Zap, Users, ChevronRight, ArrowRight, BookOpen, Sparkles
 import Link from 'next/link';
 
 export default function Home() {
-  // Force redeploy - timestamp: 2026-05-18T13:50:00Z
+  // Force redeploy - timestamp: 2026-05-18T14:45:00Z
   const { data: session, status } = useSession();
   const router = useRouter();
 
