@@ -6,15 +6,14 @@ import { ratelimit } from '@/lib/rate-limit';
 import { getDb } from '@/lib/db';
 import { legalQueries, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getAuthSession } from '@/lib/auth';
-
-const db = getDb();
+import { auth } from '@/lib/auth'; // ✅ ИСПРАВЛЕНО: auth вместо getAuthSession
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getAuthSession();
+    // ✅ ИСПРАВЛЕНО: NextAuth v5 синтаксис
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -41,17 +40,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const db = getDb();
     const user = await db.query.users.findFirst({
       where: eq(users.id, session.user.id),
     });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
-    const isPremium = user.role === 'premium_user';
+    const isPremium = user?.role === 'premium_user';
     const today = new Date().toISOString().split('T')[0];
 
-    if (!isPremium && user.lastQueryDate?.toISOString().split('T')[0] === today) {
+    if (!isPremium && user?.lastQueryDate?.toISOString().split('T')[0] === today) {
       const freeLimit = parseInt(process.env.FREE_QUERIES_PER_DAY || '5');
       if ((user.dailyFreeQueries || 0) >= freeLimit) {
         return NextResponse.json(
@@ -61,9 +58,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Векторный поиск (RAG)
+    // RAG fallback search
     const relevantCases = await db.query.courtCases.findMany({
-      where: (cases, { sql, and, like }) => 
+      where: (cases, { sql, and, like }) =>
         and(
           like(cases.fullText, `%${cleaned.slice(0, 100)}%`),
           category ? like(cases.category, `%${category}%`) : undefined
@@ -72,12 +69,11 @@ export async function POST(req: NextRequest) {
     });
 
     const context = relevantCases.length > 0
-      ? `📚 Найденные судебные дела:\n${relevantCases.map(c => 
+      ? `📚 Найденные судебные дела:\n${relevantCases.map(c =>
           `- ${c.caseNumber} (${c.court}, ${c.decisionDate?.toISOString().split('T')[0]}):\n  ${c.summary || c.fullText?.slice(0, 200)}...`
         ).join('\n')}\n\n`
       : '';
 
-    // 🔄 Подключаем Mistral вместо DeepSeek
     const model = getMistralModel(useCoder ? 'coder' : 'chat');
 
     const result = await streamText({
@@ -90,7 +86,6 @@ export async function POST(req: NextRequest) {
         },
       ],
       onFinish: async ({ text }) => {
-        if (!session?.user?.id) return;
         const sanitizedResponse = sanitizeResponse(text);
         await db.insert(legalQueries).values({
           userId: session.user.id,
@@ -101,11 +96,11 @@ export async function POST(req: NextRequest) {
           tokensUsed: text.length,
           isPremium,
         });
-        
+
         if (!isPremium) {
           const lastDate = user?.lastQueryDate?.toISOString().split('T')[0];
           const today = new Date().toISOString().split('T')[0];
-          
+
           if (lastDate === today) {
             await db.update(users)
               .set({ dailyFreeQueries: (user.dailyFreeQueries || 0) + 1 })
@@ -119,7 +114,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return result.toTextStreamResponse({
+    return result.toDataStreamResponse({
       headers: { 'X-Request-Id': crypto.randomUUID() },
     });
 
