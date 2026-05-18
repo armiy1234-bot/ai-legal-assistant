@@ -1,13 +1,4 @@
-import { handlers, setVKDeviceId } from "@/lib/auth";
-import type { NextRequest } from "next/server";
+// ✅ NextAuth v5: просто экспортируем handlers как GET/POST
+import { handlers } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  if (url.pathname.endsWith("/callback/vk")) {
-    const deviceId = url.searchParams.get("device_id");
-    if (deviceId) setVKDeviceId(deviceId);
-  }
-  return handlers.GET(req);
-}
-
-export const POST = handlers.POST;
+export const { GET, POST } = handlers;
