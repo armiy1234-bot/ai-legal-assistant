@@ -9,6 +9,8 @@ import { ChatMessages } from '@/components/chat/chat-messages';
 import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2, Download } from 'lucide-react';
 import { categories as legalCategories, getCategoryById } from '@/lib/categories';
 import { QueryCounter } from '@/components/query-counter';
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSession } from 'next-auth/react';
 
 interface AiAssistantProps {
@@ -85,7 +87,9 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
         <h2 className="font-semibold text-sm">LexAI</h2>
         <p className="text-[11px] text-muted-foreground">Юридический ассистент</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <LocaleSwitcher />
+        <ThemeSwitcher />
         {session?.user?.id && <QueryCounter userId={session.user.id} />}
         {messages.length > 0 && (
           <button
