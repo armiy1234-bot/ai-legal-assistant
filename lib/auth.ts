@@ -1,4 +1,4 @@
-import { NextAuthOptions, getServerSession } from "next-auth";
+import NextAuth from "next-auth";
 import VKProvider from "next-auth/providers/vk";
 import EmailProvider from "next-auth/providers/email";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
@@ -6,12 +6,11 @@ import { SupabaseAdapter } from "@auth/supabase-adapter";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const adapter = (supabaseUrl && supabaseKey)
-  ? SupabaseAdapter({ url: supabaseUrl, secret: supabaseKey })
-  : undefined;
-
-export const authOptions: NextAuthOptions = {
-  adapter,
+// ✅ Синтаксис NextAuth v5: экспортируем handlers и auth
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: (supabaseUrl && supabaseKey)
+    ? SupabaseAdapter({ url: supabaseUrl, secret: supabaseKey })
+    : undefined,
   providers: [
     VKProvider({
       clientId: process.env.VK_CLIENT_ID || "",
@@ -35,7 +34,4 @@ export const authOptions: NextAuthOptions = {
   },
   pages: { signIn: "/login" },
   debug: process.env.NODE_ENV === "development",
-};
-
-// 🔧 Исправление: экспортируем getAuthSession, чтобы другие файлы не падали
-export const getAuthSession = () => getServerSession(authOptions);
+});
