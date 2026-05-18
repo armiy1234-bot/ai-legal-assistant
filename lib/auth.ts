@@ -20,14 +20,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         params: { scope: "email" },
       },
     }),
-    EmailProvider({
-      server: process.env.EMAIL_SERVER || {
-        host: "localhost",
-        port: 1025,
-        auth: { user: "test", pass: "test" },
-      },
-      from: process.env.EMAIL_FROM || "auth@example.com",
-    }),
+    ...(process.env.EMAIL_SERVER
+      ? [
+          EmailProvider({
+            server: process.env.EMAIL_SERVER,
+            from: process.env.EMAIL_FROM || "noreply@lexai.ru",
+          }),
+        ]
+      : []),
   ],
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   callbacks: {
