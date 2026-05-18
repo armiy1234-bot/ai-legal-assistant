@@ -1,21 +1,23 @@
 import { NextAuthOptions } from "next-auth";
 import VKProvider from "next-auth/providers/vk";
 import EmailProvider from "next-auth/providers/email";
+import { SupabaseAdapter } from "@auth/supabase-adapter";
 
-// 🛡️ Безопасная инициализация адаптера
-// Адаптер создаётся ТОЛЬКО если URL и ключ существуют (т.е. на проде или локально)
-let adapterConfig: any = undefined;
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  const { SupabaseAdapter } = require("@auth/supabase-adapter");
-  adapterConfig = SupabaseAdapter({
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  });
-}
+// Переменные окружения
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Адаптер создаётся ТОЛЬКО если ключи есть. 
+// Это безопасно для сборки: импорт не падает, вызов функции отложен.
+const adapter = (supabaseUrl && supabaseKey)
+  ? SupabaseAdapter({
+      url: supabaseUrl,
+      secret: supabaseKey,
+    })
+  : undefined;
 
 export const authOptions: NextAuthOptions = {
-  adapter: adapterConfig,
-  
+  adapter,
   providers: [
     VKProvider({
       clientId: process.env.VK_CLIENT_ID || "",
@@ -30,12 +32,10 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM || "auth@example.com",
     }),
   ],
-
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 дней
+    maxAge: 30 * 24 * 60 * 60,
   },
-
   callbacks: {
     async session({ session, token }) {
       if (token.sub && session.user) {
@@ -43,15 +43,9 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user }) {
-      if (user) token.id = user.id;
-      return token;
-    },
   },
-
   pages: {
     signIn: "/login",
   },
-  
   debug: process.env.NODE_ENV === "development",
 };
