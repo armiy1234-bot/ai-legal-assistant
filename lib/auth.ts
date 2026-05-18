@@ -1,19 +1,13 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, getServerSession } from "next-auth";
 import VKProvider from "next-auth/providers/vk";
 import EmailProvider from "next-auth/providers/email";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
 
-// Переменные окружения
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Адаптер создаётся ТОЛЬКО если ключи есть. 
-// Это безопасно для сборки: импорт не падает, вызов функции отложен.
 const adapter = (supabaseUrl && supabaseKey)
-  ? SupabaseAdapter({
-      url: supabaseUrl,
-      secret: supabaseKey,
-    })
+  ? SupabaseAdapter({ url: supabaseUrl, secret: supabaseKey })
   : undefined;
 
 export const authOptions: NextAuthOptions = {
@@ -32,20 +26,16 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM || "auth@example.com",
     }),
   ],
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-  },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   callbacks: {
     async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
-      }
+      if (token.sub && session.user) session.user.id = token.sub;
       return session;
     },
   },
-  pages: {
-    signIn: "/login",
-  },
+  pages: { signIn: "/login" },
   debug: process.env.NODE_ENV === "development",
 };
+
+// 🔧 Исправление: экспортируем getAuthSession, чтобы другие файлы не падали
+export const getAuthSession = () => getServerSession(authOptions);
