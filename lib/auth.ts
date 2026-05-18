@@ -15,7 +15,6 @@ function VKIDProvider(options: { clientId: string; clientSecret: string }) {
     type: "oauth" as const,
     clientId: options.clientId,
     clientSecret: options.clientSecret,
-    checks: ["state"],
     authorization: `https://id.vk.com/authorize?scope=openid+email&v=${apiVersion}`,
     token: `https://oauth.vk.com/access_token?v=${apiVersion}`,
     client: { token_endpoint_auth_method: "client_secret_post" as const },
