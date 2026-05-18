@@ -6,8 +6,6 @@ import { SupabaseAdapter } from "@auth/supabase-adapter";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const scopes = ["openid", "email"];
-
 let _vkDeviceId: string | null = null;
 
 export function setVKDeviceId(id: string | null) { _vkDeviceId = id; }
@@ -20,23 +18,28 @@ function VKIDProvider(options: { clientId: string; clientSecret: string }) {
     clientId: options.clientId,
     clientSecret: options.clientSecret,
     checks: ["pkce", "state"] as ("pkce" | "state" | "none")[],
-    authorization: `https://id.vk.ru/authorize?scope=${scopes.join("+")}`,
-    token: `https://id.vk.ru/oauth2/auth`,
+    authorization: "https://id.vk.ru/authorize?scope=email",
+    token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
     [customFetch]: (url: RequestInfo | URL, init?: RequestInit) => {
-      if (
-        _vkDeviceId &&
-        typeof url === "string" &&
-        url.includes("/oauth2/auth") &&
-        init?.body
-      ) {
-        const body = init.body as URLSearchParams;
-        if (body.set) body.set("device_id", _vkDeviceId);
+      if (_vkDeviceId && typeof url === "string" && url.includes("/oauth2/auth") && init?.body) {
+        let bodyStr: string;
+        if (typeof init.body === "string") {
+          bodyStr = init.body;
+        } else if (init.body instanceof URLSearchParams) {
+          bodyStr = init.body.toString();
+        } else {
+          return fetch(url, init);
+        }
+        const params = new URLSearchParams(bodyStr);
+        params.set("device_id", _vkDeviceId);
+        init.body = params.toString();
+        (init.headers as Record<string, string>)["content-type"] = "application/x-www-form-urlencoded";
       }
       return fetch(url, init);
     },
     userinfo: {
-      url: `https://id.vk.ru/oauth2/user_info`,
+      url: "https://id.vk.ru/oauth2/user_info",
       async request({ tokens, provider }: any) {
         const res = await fetch(provider.userinfo?.url, {
           method: "POST",
