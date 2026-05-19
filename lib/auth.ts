@@ -63,10 +63,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
   let vkDeviceId: string | null = null;
 
   if (req) {
-    const url = new URL(req.url);
-    if (url.pathname.endsWith("/callback/vk")) {
-      vkDeviceId = url.searchParams.get("device_id");
-    }
+    try {
+      const url = new URL(req.url);
+      if (url.pathname.includes("/callback/vk")) {
+        vkDeviceId = url.searchParams.get("device_id");
+      }
+    } catch {}
   }
 
   return {
