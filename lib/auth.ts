@@ -13,7 +13,7 @@ function VKIDProvider(options: { clientId: string; clientSecret: string; deviceI
     type: "oauth" as const,
     clientId: options.clientId,
     clientSecret: options.clientSecret,
-    checks: ["pkce", "state"] as ("pkce" | "state" | "none")[],
+    checks: ["pkce"] as ("pkce" | "state" | "none")[],
     authorization: "https://id.vk.ru/authorize?scope=email",
     token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
