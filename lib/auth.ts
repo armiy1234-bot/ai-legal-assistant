@@ -18,7 +18,7 @@ function VKIDProvider(options: { clientId: string; clientSecret: string; deviceI
     token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
     [customFetch]: (url: RequestInfo | URL, init?: RequestInit) => {
-      if (options.deviceId && typeof url === "string" && url.includes("/oauth2/auth") && init?.body) {
+      if (options.deviceId && String(url).includes("/oauth2/auth") && init?.body) {
         let bodyStr: string;
         if (typeof init.body === "string") {
           bodyStr = init.body;
