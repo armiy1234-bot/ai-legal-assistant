@@ -6,17 +6,21 @@ import { SupabaseAdapter } from "@auth/supabase-adapter";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Создаем провайдер VK с отключенным PKCE
+const vkProvider = VK({
+  clientId: process.env.VK_CLIENT_ID || "",
+  clientSecret: process.env.VK_CLIENT_SECRET || "",
+});
+
+// Принудительно отключаем PKCE, оставляем только state
+(vkProvider as any).checks = ["state"];
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: (supabaseUrl && supabaseKey)
     ? SupabaseAdapter({ url: supabaseUrl, secret: supabaseKey })
     : undefined,
   providers: [
-    VK({
-      clientId: process.env.VK_CLIENT_ID || "",
-      clientSecret: process.env.VK_CLIENT_SECRET || "",
-      // @ts-ignore - checks не в типах, но поддерживается
-      checks: ["state"],
-    }),
+    vkProvider,
     ...(process.env.EMAIL_SERVER
       ? [
           EmailProvider({
