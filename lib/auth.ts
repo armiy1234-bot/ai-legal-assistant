@@ -6,7 +6,12 @@ import { SupabaseAdapter } from "@auth/supabase-adapter";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-function VKIDProvider(options: { clientId: string; clientSecret: string; deviceId: string | null }) {
+function VKIDProvider(options: { 
+  clientId: string; 
+  clientSecret: string; 
+  deviceId: string | null;
+  state: string | null;
+}) {
   return {
     id: "vk",
     name: "VK ID",
@@ -18,7 +23,7 @@ function VKIDProvider(options: { clientId: string; clientSecret: string; deviceI
     token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
     [customFetch]: (url: RequestInfo | URL, init?: RequestInit) => {
-      if (options.deviceId && String(url).includes("/oauth2/auth") && init?.body) {
+      if (String(url).includes("/oauth2/auth") && init?.body) {
         let bodyStr: string;
         if (typeof init.body === "string") {
           bodyStr = init.body;
@@ -28,7 +33,12 @@ function VKIDProvider(options: { clientId: string; clientSecret: string; deviceI
           return fetch(url, init);
         }
         const params = new URLSearchParams(bodyStr);
-        params.set("device_id", options.deviceId);
+        if (options.deviceId) {
+          params.set("device_id", options.deviceId);
+        }
+        if (options.state != null) {
+          params.set("state", options.state);
+        }
         init.body = params.toString();
       }
       return fetch(url, init);
@@ -61,12 +71,14 @@ function VKIDProvider(options: { clientId: string; clientSecret: string; deviceI
 
 export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
   let vkDeviceId: string | null = null;
+  let vkState: string | null = null;
 
   if (req) {
     try {
       const url = new URL(req.url);
       if (url.pathname.includes("/callback/vk")) {
         vkDeviceId = url.searchParams.get("device_id");
+        vkState = url.searchParams.get("state");
       }
     } catch {}
   }
@@ -80,6 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
         clientId: process.env.VK_CLIENT_ID || "",
         clientSecret: process.env.VK_CLIENT_SECRET || "",
         deviceId: vkDeviceId,
+        state: vkState,
       }),
       ...(process.env.EMAIL_SERVER
         ? [
