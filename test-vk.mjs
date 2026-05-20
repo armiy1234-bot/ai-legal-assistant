@@ -1,8 +1,8 @@
-import VK from 'next-auth/providers/vk';
-
-const provider = VK({ clientId: 'test', clientSecret: 'secret', checks: ['state'] });
-console.log('Provider keys:', Object.keys(provider));
-console.log('Provider options:', provider.options);
-console.log('Provider checks:', provider.checks);
-console.log('Provider type:', provider.type);
-console.log('Provider authorization:', provider.authorization);
+import VK from '@auth/core/providers/vk';
+console.log('VK type:', typeof VK);
+console.log('VK name:', VK.name);
+console.log('VK is function:', typeof VK === 'function');
+if (typeof VK === 'function') {
+  const config = VK({ clientId: 'test', clientSecret: 'test' });
+  console.log('Config:', JSON.stringify(config, null, 2));
+}
