@@ -3,7 +3,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 const commonConfig = {
   baseURL: process.env.MISTRAL_BASE_URL || 'https://api.mistral.ai/v1',
   apiKey: process.env.MISTRAL_API_KEY || '',
-  compatibility: "compatible",
 };
 
 export const mistralChat = createOpenAI(commonConfig);
@@ -14,9 +13,9 @@ export type MistralModel = 'chat' | 'coder';
 
 export function getMistralModel(type: MistralModel) {
   if (type === 'coder') {
-    return mistralCoder(process.env.MISTRAL_CODER_MODEL || 'codestral-latest');
+    return mistralCoder.chat(process.env.MISTRAL_CODER_MODEL || 'codestral-latest');
   }
-  return mistralChat(process.env.MISTRAL_CHAT_MODEL || 'mistral-large-latest');
+  return mistralChat.chat(process.env.MISTRAL_CHAT_MODEL || 'mistral-large-latest');
 }
 
 export const LEGAL_SYSTEM_PROMPT = `
