@@ -20,25 +20,40 @@ function VKIDProvider(options: {
     authorization: "https://id.vk.ru/authorize?scope=email,phone",
     token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
-    [customFetch]: (url: RequestInfo | URL, init?: RequestInit) => {
-      if (String(url).includes("/oauth2/auth") && init?.body) {
-        let bodyStr: string;
-        if (typeof init.body === "string") {
-          bodyStr = init.body;
-        } else if (init.body instanceof URLSearchParams) {
-          bodyStr = init.body.toString();
-        } else {
-          return fetch(url, init);
+    [customFetch]: async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).includes("/oauth2/auth")) {
+        if (init?.body) {
+          let bodyStr: string;
+          if (typeof init.body === "string") {
+            bodyStr = init.body;
+          } else if (init.body instanceof URLSearchParams) {
+            bodyStr = init.body.toString();
+          } else {
+            return fetch(url, init);
+          }
+          const params = new URLSearchParams(bodyStr);
+          if (options.deviceId) {
+            params.set("device_id", options.deviceId);
+          }
+          const stateVal = (options.state || options.extId || "");
+          if (stateVal) {
+            params.set("state", stateVal);
+          }
+          init.body = params.toString();
         }
-        const params = new URLSearchParams(bodyStr);
-        if (options.deviceId) {
-          params.set("device_id", options.deviceId);
+        const res = await fetch(url, init);
+        if (res.ok) {
+          const json = await res.clone().json();
+          if (json.id_token) {
+            delete json.id_token;
+            return new Response(JSON.stringify(json), {
+              status: res.status,
+              statusText: res.statusText,
+              headers: res.headers,
+            });
+          }
         }
-        const stateVal = (options.state || options.extId || "");
-        if (stateVal) {
-          params.set("state", stateVal);
-        }
-        init.body = params.toString();
+        return res;
       }
       return fetch(url, init);
     },
