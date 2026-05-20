@@ -55,12 +55,12 @@ export default function RootLayout({
           <I18nProvider>
           <ThemeProvider>
           <div className="flex h-[100dvh]">
-            <main className="w-[30%] min-w-[360px] max-w-[520px] border-r border-border/50 overflow-y-auto hidden md:block">
-              {children}
-            </main>
-            <aside className="flex-1 flex flex-col min-w-0 bg-card">
+            <aside className="w-96 border-r border-border/50 bg-card hidden md:flex md:flex-col">
               <AiAssistant />
             </aside>
+            <main className="flex-1 overflow-y-auto pb-[280px] md:pb-0">
+              {children}
+            </main>
             <div className="md:hidden fixed bottom-0 left-0 right-0 h-[280px] border-t border-border/50 bg-background/95 backdrop-blur-lg z-50">
               <AiAssistant compact />
             </div>
