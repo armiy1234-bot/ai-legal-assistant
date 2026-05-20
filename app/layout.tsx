@@ -55,7 +55,7 @@ export default function RootLayout({
           <I18nProvider>
           <ThemeProvider>
           <div className="flex h-[100dvh]">
-            <aside className="w-96 border-r border-border/50 bg-card hidden md:flex md:flex-col">
+            <aside className="w-1/2 min-w-[400px] border-r border-border/50 bg-card hidden md:flex md:flex-col">
               <AiAssistant />
             </aside>
             <main className="flex-1 overflow-y-auto pb-[280px] md:pb-0">
