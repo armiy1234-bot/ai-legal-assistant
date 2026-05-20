@@ -149,7 +149,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
                 where: eq(usersTable.phone, email),
               });
             }
-          } catch {}
+          } catch (dbErr) {
+        console.error("[auth:jwt] DB error during sign-in:", dbErr);
+      }
           if (dbUser) {
             token.sub = dbUser.id;
           }
