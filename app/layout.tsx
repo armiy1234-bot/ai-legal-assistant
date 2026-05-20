@@ -55,7 +55,7 @@ export default function RootLayout({
           <I18nProvider>
           <ThemeProvider>
           <div className="flex h-[100dvh]">
-            <main className="w-96 border-r border-border/50 overflow-y-auto hidden md:block">
+            <main className="w-1/4 min-w-[360px] max-w-[480px] border-r border-border/50 overflow-y-auto hidden md:block">
               {children}
             </main>
             <aside className="flex-1 flex flex-col min-w-0 bg-card">
