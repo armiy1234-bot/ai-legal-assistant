@@ -16,7 +16,7 @@ function VKIDProvider(options: {
     clientId: options.clientId,
     clientSecret: options.clientSecret,
     checks: ["pkce"] as ("pkce" | "state" | "none")[],
-    authorization: "https://id.vk.ru/authorize?scope=email",
+    authorization: "https://id.vk.ru/authorize?scope=email,phone",
     token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
     [customFetch]: (url: RequestInfo | URL, init?: RequestInit) => {
