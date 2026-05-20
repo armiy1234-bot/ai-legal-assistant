@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import { customFetch } from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
+import Google from "next-auth/providers/google";
 
 function VKIDProvider(options: { 
   clientId: string; 
@@ -93,6 +94,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
         state: vkState,
         extId: vkExtId,
       }),
+      Google((process.env.OAUTH_GOOGLE_CLIENT_ID && process.env.OAUTH_GOOGLE_CLIENT_SECRET) ? {
+        clientId: process.env.OAUTH_GOOGLE_CLIENT_ID,
+        clientSecret: process.env.OAUTH_GOOGLE_CLIENT_SECRET,
+      } : {}),
       ...(process.env.EMAIL_SERVER
         ? [
             NodemailerProvider({
@@ -107,6 +112,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
       async session({ session, token }) {
         if (token.sub && session.user) session.user.id = token.sub;
         return session;
+      },
+      async signIn({ account, profile }) {
+        if (account?.provider === "google") {
+          return true;
+        }
+        return true;
+      },
+    },
+    events: {
+      async error(error) {
+        console.error("[auth:error]", error?.message || error);
+        if (error?.cause) {
+          console.error("[auth:error:cause]", error.cause);
+        }
       },
     },
     pages: { signIn: "/login" },
