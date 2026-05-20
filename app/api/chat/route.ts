@@ -27,8 +27,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, category, useCoder } = await req.json();
-    if (!message || typeof message !== 'string') {
+    const body = await req.json();
+    let message: string;
+    let category = body.category;
+    let useCoder = body.useCoder;
+
+    if (Array.isArray(body.messages) && body.messages.length > 0) {
+      const lastUserMsg = [...body.messages].reverse().find((m: any) => m.role === "user");
+      if (!lastUserMsg) {
+        return NextResponse.json({ error: 'Неверный формат запроса' }, { status: 400 });
+      }
+      if (lastUserMsg.content && typeof lastUserMsg.content === "string") {
+        message = lastUserMsg.content;
+      } else if (lastUserMsg.parts?.[0]?.text) {
+        message = lastUserMsg.parts[0].text;
+      } else {
+        return NextResponse.json({ error: 'Неверный формат запроса' }, { status: 400 });
+      }
+    } else if (typeof body.message === "string") {
+      message = body.message;
+    } else {
       return NextResponse.json({ error: 'Неверный формат запроса' }, { status: 400 });
     }
 
