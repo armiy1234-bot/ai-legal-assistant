@@ -59,33 +59,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const db = getDb();
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-    });
+    let isPremium = false;
+    let user: any = null;
+    let relevantCases: any[] = [];
+    try {
+      const db = getDb();
+      user = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+      });
+      isPremium = user?.role === 'premium_user';
+      const today = new Date().toISOString().split('T')[0];
 
-    const isPremium = user?.role === 'premium_user';
-    const today = new Date().toISOString().split('T')[0];
-
-    if (!isPremium && user?.lastQueryDate?.toISOString().split('T')[0] === today) {
-      const freeLimit = parseInt(process.env.FREE_QUERIES_PER_DAY || '5');
-      if ((user.dailyFreeQueries || 0) >= freeLimit) {
-        return NextResponse.json(
-          { error: 'Дневной лимит бесплатных запросов исчерпан' },
-          { status: 403 }
-        );
+      if (!isPremium && user?.lastQueryDate?.toISOString().split('T')[0] === today) {
+        const freeLimit = parseInt(process.env.FREE_QUERIES_PER_DAY || '5');
+        if ((user.dailyFreeQueries || 0) >= freeLimit) {
+          return NextResponse.json(
+            { error: 'Дневной лимит бесплатных запросов исчерпан' },
+            { status: 403 }
+          );
+        }
       }
-    }
 
-    // RAG fallback search
-    const relevantCases = await db.query.courtCases.findMany({
-      where: (cases, { sql, and, like }) =>
-        and(
-          like(cases.fullText, `%${cleaned.slice(0, 100)}%`),
-          category ? like(cases.category, `%${category}%`) : undefined
-        ),
-      limit: 3,
-    });
+      relevantCases = await db.query.courtCases.findMany({
+        where: (cases, { sql, and, like }) =>
+          and(
+            like(cases.fullText, `%${cleaned.slice(0, 100)}%`),
+            category ? like(cases.category, `%${category}%`) : undefined
+          ),
+        limit: 3,
+      });
+    } catch (dbErr) {
+      console.error('[CHAT_DB] DB error, continuing without DB:', dbErr);
+    }
 
     const context = relevantCases.length > 0
       ? `📚 Найденные судебные дела:\n${relevantCases.map(c =>
@@ -108,30 +113,35 @@ export async function POST(req: NextRequest) {
         },
       ],
       onFinish: async ({ text }) => {
-        const sanitizedResponse = sanitizeResponse(text);
-        await db.insert(legalQueries).values({
-          userId: session.user.id,
-          category,
-          question: cleaned,
-          aiResponse: sanitizedResponse,
-          modelUsed: useCoder ? 'mistral-coder' : 'mistral-chat',
-          tokensUsed: text.length,
-          isPremium,
-        });
+        try {
+          const sanitizedResponse = sanitizeResponse(text);
+          const db = getDb();
+          await db.insert(legalQueries).values({
+            userId: session.user.id,
+            category,
+            question: cleaned,
+            aiResponse: sanitizedResponse,
+            modelUsed: useCoder ? 'mistral-coder' : 'mistral-chat',
+            tokensUsed: text.length,
+            isPremium,
+          });
 
-        if (!isPremium) {
-          const lastDate = user?.lastQueryDate?.toISOString().split('T')[0];
-          const today = new Date().toISOString().split('T')[0];
+          if (!isPremium) {
+            const lastDate = user?.lastQueryDate?.toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
 
-          if (lastDate === today) {
-            await db.update(users)
-              .set({ dailyFreeQueries: (user!.dailyFreeQueries || 0) + 1 })
-              .where(eq(users.id, session.user.id));
-          } else {
-            await db.update(users)
-              .set({ dailyFreeQueries: 1, lastQueryDate: new Date() })
-              .where(eq(users.id, session.user.id));
+            if (lastDate === today) {
+              await db.update(users)
+                .set({ dailyFreeQueries: (user!.dailyFreeQueries || 0) + 1 })
+                .where(eq(users.id, session.user.id));
+            } else {
+              await db.update(users)
+                .set({ dailyFreeQueries: 1, lastQueryDate: new Date() })
+                .where(eq(users.id, session.user.id));
+            }
           }
+        } catch (dbErr) {
+          console.error('[CHAT_DB] onFinish DB error:', dbErr);
         }
       },
     });
