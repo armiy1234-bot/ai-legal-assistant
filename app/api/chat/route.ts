@@ -9,7 +9,7 @@ import { legalQueries, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth'; // ✅ ИСПРАВЛЕНО: auth вместо getAuthSession
 
-export const maxDuration = 420;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
