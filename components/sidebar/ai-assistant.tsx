@@ -11,7 +11,7 @@ import { categories as legalCategories, getCategoryById } from '@/lib/categories
 import { QueryCounter } from '@/components/query-counter';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 interface AiAssistantProps {
   defaultCategory?: string;
@@ -90,7 +90,18 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
       <div className="flex items-center gap-1">
         <LocaleSwitcher />
         <ThemeSwitcher />
-        {session?.user?.id && <QueryCounter userId={session.user.id} />}
+        {session?.user?.id && (
+          <>
+            <QueryCounter userId={session.user.id} />
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Выйти"
+            >
+              Выйти
+            </button>
+          </>
+        )}
         {messages.length > 0 && (
           <button
             onClick={exportToPDF}
