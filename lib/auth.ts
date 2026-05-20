@@ -120,14 +120,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
         return true;
       },
     },
-    events: {
-      async error(error) {
-        console.error("[auth:error]", error?.message || error);
-        if (error?.cause) {
-          console.error("[auth:error:cause]", error.cause);
-        }
-      },
-    },
     pages: { signIn: "/login" },
     debug: true,
   };
