@@ -2,16 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 import { Button } from '@/components/ui/button';
 import { ChatInput } from '@/components/chat/chat-input';
 import { ChatMessages } from '@/components/chat/chat-messages';
-import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2, Download } from 'lucide-react';
+import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2, Download, LogOut } from 'lucide-react';
 import { categories as legalCategories, getCategoryById } from '@/lib/categories';
 import { QueryCounter } from '@/components/query-counter';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSession, signOut } from 'next-auth/react';
+import { TextStreamChatTransport } from 'ai';
 
 interface AiAssistantProps {
   defaultCategory?: string;
@@ -26,7 +26,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
+    transport: new TextStreamChatTransport({
       api: '/api/chat',
       body: {
         category: selectedCategory,
@@ -98,7 +98,8 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Выйти"
             >
-              Выйти
+              <LogOut className="w-3 h-3" />
+              <span className="hidden sm:inline">Выйти</span>
             </button>
           </>
         )}

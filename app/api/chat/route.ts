@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return result.toDataStreamResponse({
+    return result.toTextStreamResponse({
       headers: { 'X-Request-Id': crypto.randomUUID() },
     });
 
