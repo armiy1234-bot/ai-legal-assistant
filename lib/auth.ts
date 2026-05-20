@@ -11,6 +11,7 @@ function VKIDProvider(options: {
   clientSecret: string; 
   deviceId: string | null;
   state: string | null;
+  extId: string | null;
 }) {
   return {
     id: "vk",
@@ -36,8 +37,9 @@ function VKIDProvider(options: {
         if (options.deviceId) {
           params.set("device_id", options.deviceId);
         }
-        if (options.state != null) {
-          params.set("state", options.state);
+        const stateVal = (options.state || options.extId || "");
+        if (stateVal) {
+          params.set("state", stateVal);
         }
         init.body = params.toString();
       }
@@ -72,6 +74,7 @@ function VKIDProvider(options: {
 export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
   let vkDeviceId: string | null = null;
   let vkState: string | null = null;
+  let vkExtId: string | null = null;
 
   if (req) {
     try {
@@ -79,6 +82,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
       if (url.pathname.includes("/callback/vk")) {
         vkDeviceId = url.searchParams.get("device_id");
         vkState = url.searchParams.get("state");
+        vkExtId = url.searchParams.get("ext_id");
       }
     } catch {}
   }
@@ -93,6 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
         clientSecret: process.env.VK_CLIENT_SECRET || "",
         deviceId: vkDeviceId,
         state: vkState,
+        extId: vkExtId,
       }),
       ...(process.env.EMAIL_SERVER
         ? [
