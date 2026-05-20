@@ -1,10 +1,6 @@
 import NextAuth from "next-auth";
 import { customFetch } from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
-import { SupabaseAdapter } from "@auth/supabase-adapter";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function VKIDProvider(options: { 
   clientId: string; 
@@ -65,6 +61,7 @@ function VKIDProvider(options: {
         name: [profile.first_name, profile.last_name].filter(Boolean).join(" "),
         email: profile.email ?? null,
         image: profile.avatar,
+        phone: profile.phone ?? null,
       };
     },
     style: { bg: "#07F", text: "#fff" },
@@ -88,9 +85,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
   }
 
   return {
-    adapter: (supabaseUrl && supabaseKey)
-      ? SupabaseAdapter({ url: supabaseUrl, secret: supabaseKey })
-      : undefined,
     providers: [
       VKIDProvider({
         clientId: process.env.VK_CLIENT_ID || "",

@@ -9,8 +9,8 @@ out/
 .next/
 
 # Environment
-.env
-.env*.local
+.env*
+!.env.example
 !.env.local.example
 
 # Database
@@ -45,3 +45,4 @@ build/
 
 # Supabase local
 .supabase/
+.vercel
