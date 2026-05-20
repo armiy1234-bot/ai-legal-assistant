@@ -2,6 +2,9 @@ import NextAuth from "next-auth";
 import { customFetch } from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
 import Google from "next-auth/providers/google";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { users as usersTable } from "@/lib/db/schema";
 
 function VKIDProvider(options: { 
   clientId: string; 
@@ -124,15 +127,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
     ],
     session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
     callbacks: {
+      async jwt({ token, account, profile }) {
+        if (account && profile) {
+          let dbUser;
+          try {
+            const db = getDb();
+            if (account.provider === "vk") {
+              dbUser = await db.query.users.findFirst({
+                where: eq(usersTable.vkId, String(profile.user_id)),
+              });
+              if (!dbUser) {
+                const [created] = await db.insert(usersTable).values({
+                  vkId: String(profile.user_id),
+                  phone: (profile as any).phone || null,
+                }).returning();
+                dbUser = created;
+              }
+            } else if (account.provider === "google") {
+              const email = profile.email || account.providerAccountId;
+              dbUser = await db.query.users.findFirst({
+                where: eq(usersTable.phone, email),
+              });
+            }
+          } catch {}
+          if (dbUser) {
+            token.sub = dbUser.id;
+          }
+        }
+        return token;
+      },
       async session({ session, token }) {
         if (token.sub && session.user) session.user.id = token.sub;
         return session;
-      },
-      async signIn({ account, profile }) {
-        if (account?.provider === "google") {
-          return true;
-        }
-        return true;
       },
     },
     pages: { signIn: "/login" },
