@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from '@/lib/theme-provider';
 import { I18nProvider } from '@/lib/i18n';
-import { AiAssistant } from '@/components/sidebar/ai-assistant';
+import { LayoutBody } from '@/components/layout-body';
 
 const inter = Inter({ subsets: ['cyrillic', 'latin'], weight: ['400', '500', '600', '700'] });
 
@@ -54,17 +54,7 @@ export default function RootLayout({
         <SessionProvider>
           <I18nProvider>
           <ThemeProvider>
-          <div className="flex h-[100dvh]">
-            <aside className="w-1/2 min-w-[400px] border-r border-border/50 bg-card hidden md:flex md:flex-col">
-              <AiAssistant />
-            </aside>
-            <main className="flex-1 overflow-y-auto pb-[280px] md:pb-0">
-              {children}
-            </main>
-            <div className="md:hidden fixed bottom-0 left-0 right-0 h-[280px] border-t border-border/50 bg-background/95 backdrop-blur-lg z-50">
-              <AiAssistant compact />
-            </div>
-          </div>
+          <LayoutBody>{children}</LayoutBody>
           </ThemeProvider>
           </I18nProvider>
         </SessionProvider>

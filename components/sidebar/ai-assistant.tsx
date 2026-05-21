@@ -5,13 +5,14 @@ import { useChat } from '@ai-sdk/react';
 import { Button } from '@/components/ui/button';
 import { ChatInput } from '@/components/chat/chat-input';
 import { ChatMessages } from '@/components/chat/chat-messages';
-import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2, Download, LogOut } from 'lucide-react';
+import { Scale, Send, Loader2, AlertTriangle, Sparkles, ChevronDown, FileText, Heart, Briefcase, Shield, Home, Car, Gavel, Building2, Download, LogOut, Maximize2, Minimize2 } from 'lucide-react';
 import { categories as legalCategories, getCategoryById } from '@/lib/categories';
 import { QueryCounter } from '@/components/query-counter';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSession, signOut } from 'next-auth/react';
 import { TextStreamChatTransport } from 'ai';
+import { useFullscreen } from '@/lib/fullscreen-context';
 
 interface AiAssistantProps {
   defaultCategory?: string;
@@ -35,6 +36,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
     }),
   });
 
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
   const isLoading = status === 'streaming' || status === 'submitted';
 
   useEffect(() => {
@@ -90,6 +92,13 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
       <div className="flex items-center gap-1">
         <LocaleSwitcher />
         <ThemeSwitcher />
+        <button
+          onClick={toggleFullscreen}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title={isFullscreen ? 'Свернуть чат' : 'Развернуть чат'}
+        >
+          {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+        </button>
         {session?.user?.id && (
           <>
             <QueryCounter userId={session.user.id} />
