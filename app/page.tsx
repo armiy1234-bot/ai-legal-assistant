@@ -10,12 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Scale, Shield, Zap, Users, ChevronRight, ArrowRight, BookOpen, Sparkles, Star, MessageSquare, Send, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { LegalResponseCards } from '@/components/legal-response-cards';
-import { useChatResponse } from '@/lib/chat-response-context';
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { lastResponse, hasResponse } = useChatResponse();
 
   const categories = [
     { name: 'Гражданское', icon: '⚖️', desc: 'Наследство, собственность, договоры' },
@@ -101,10 +99,7 @@ export default function Home() {
               LexAI сочетает силу искусственного интеллекта с актуальной судебной практикой
             </p>
           </div>
-          <LegalResponseCards 
-            parsedResponse={lastResponse} 
-            isActive={hasResponse} 
-          />
+          <LegalResponseCards />
         </div>
       </section>
 
