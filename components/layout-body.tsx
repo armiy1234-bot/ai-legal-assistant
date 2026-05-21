@@ -22,7 +22,14 @@ export function LayoutBody({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-[280px] border-t border-border/50 bg-background/95 backdrop-blur-lg z-50">
+      {/* Mobile chat - compact mode */}
+      <div 
+        className={`md:hidden fixed left-0 right-0 border-t border-border/50 bg-background/95 backdrop-blur-lg z-50 transition-all duration-300 ${
+          isFullscreen 
+            ? 'inset-0 h-[100dvh] border-t-0' 
+            : 'bottom-0 h-[280px]'
+        }`}
+      >
         <AiAssistant compact />
       </div>
     </div>

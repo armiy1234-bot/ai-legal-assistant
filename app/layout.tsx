@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/lib/theme-provider';
 import { I18nProvider } from '@/lib/i18n';
 import { LayoutBody } from '@/components/layout-body';
 import { FullscreenProvider } from '@/lib/fullscreen-context';
+import { ChatResponseProvider } from '@/lib/chat-response-context';
 
 const inter = Inter({ subsets: ['cyrillic', 'latin'], weight: ['400', '500', '600', '700'] });
 
@@ -55,7 +56,7 @@ export default function RootLayout({
         <SessionProvider>
           <I18nProvider>
           <ThemeProvider>
-          <FullscreenProvider><LayoutBody>{children}</LayoutBody></FullscreenProvider>
+          <FullscreenProvider><ChatResponseProvider><LayoutBody>{children}</LayoutBody></ChatResponseProvider></FullscreenProvider>
           </ThemeProvider>
           </I18nProvider>
         </SessionProvider>

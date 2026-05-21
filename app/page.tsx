@@ -9,34 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Scale, Shield, Zap, Users, ChevronRight, ArrowRight, BookOpen, Sparkles, Star, MessageSquare, Send, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
+import { LegalResponseCards } from '@/components/legal-response-cards';
+import { useChatResponse } from '@/lib/chat-response-context';
 
 export default function Home() {
-  // Force redeploy - timestamp: 2026-05-18T14:45:00Z
   const { data: session, status } = useSession();
   const router = useRouter();
-
-  const features = [
-    {
-      icon: <Sparkles className="w-6 h-6" />,
-      title: 'AI-анализ ситуации',
-      description: 'Подробный разбор вашей правовой ситуации с ссылками на актуальную судебную практику',
-    },
-    {
-      icon: <BookOpen className="w-6 h-6" />,
-      title: 'Судебная практика',
-      description: 'База обновляется каждые 2 недели: КАД.Арбитр, SudRF, Гарант — более 50 000 дел',
-    },
-    {
-      icon: <Zap className="w-6 h-6" />,
-      title: 'План действий',
-      description: 'Пошаговая инструкция: куда обращаться, какие документы собрать, какие сроки',
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: 'Консультация с юристом',
-      description: 'Первая консультация с реальным юристом — бесплатно. Подключайтесь к специалисту',
-    },
-  ];
+  const { lastResponse, hasResponse } = useChatResponse();
 
   const categories = [
     { name: 'Гражданское', icon: '⚖️', desc: 'Наследство, собственность, договоры' },
@@ -111,7 +90,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features - Interactive Cards */}
       <section id="features" className="py-20 md:py-28">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
@@ -122,21 +101,10 @@ export default function Home() {
               LexAI сочетает силу искусственного интеллекта с актуальной судебной практикой
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, i) => (
-              <Card key={i} className="border-border/50 shadow-apple hover:shadow-apple-lg transition-all duration-300 hover:-translate-y-1">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-emerald-50 flex items-center justify-center text-primary mb-4">
-                    {feature.icon}
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">{feature.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <LegalResponseCards 
+            parsedResponse={lastResponse} 
+            isActive={hasResponse} 
+          />
         </div>
       </section>
 
@@ -339,7 +307,6 @@ function ContactForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Здесь можно добавить отправку на API
     setSubmitted(true);
   };
 

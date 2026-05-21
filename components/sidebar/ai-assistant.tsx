@@ -13,6 +13,8 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSession, signOut } from 'next-auth/react';
 import { TextStreamChatTransport } from 'ai';
 import { useFullscreen } from '@/lib/fullscreen-context';
+import { useChatResponse } from '@/lib/chat-response-context';
+import { parseLegalResponse } from '@/lib/response-parser';
 
 interface AiAssistantProps {
   defaultCategory?: string;
@@ -25,6 +27,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
   const [selectedCategory, setSelectedCategory] = useState(defaultCategory || '');
   const [showCategories, setShowCategories] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new TextStreamChatTransport({
@@ -37,11 +40,24 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
   });
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
+  const { setLastResponse } = useChatResponse();
   const isLoading = status === 'streaming' || status === 'submitted';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Parse AI response and update context
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === 'assistant' && 'text' in lastMessage) {
+      const text = String(lastMessage.text);
+      const parsed = parseLegalResponse(text);
+      if (parsed.summary || parsed.legalAnalysis || parsed.actionPlan) {
+        setLastResponse(parsed);
+      }
+    }
+  }, [messages, setLastResponse]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,9 +193,11 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
     </div>
   );
 
+  const containerClass = `h-full flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`;
+
   if (compact) {
     return (
-      <div className="h-full flex flex-col">
+      <div ref={chatContainerRef} className={containerClass}>
         {header}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -216,7 +234,7 @@ export function AiAssistant({ defaultCategory, compact = false }: AiAssistantPro
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div ref={chatContainerRef} className={containerClass}>
       {header}
       {categorySelector}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
