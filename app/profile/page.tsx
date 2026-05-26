@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const response = await fetch(`${baseUrl}/api/user/profile`, {
     headers: {
-      Cookie: `next-auth.session-token=${session.sessionToken}`,
+      Cookie: `next-auth.session-token=${session.user?.id || ''}`,
     },
     cache: "no-store",
   });

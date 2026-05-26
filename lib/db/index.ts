@@ -10,12 +10,7 @@ let _db: Db | null = null;
 export function getDb(): Db {
   if (_db) return _db;
 
-  if (process.env.NODE_ENV === 'production' && process.env.VERCEL && !process.env.DATABASE_URL) {
-    _db = drizzle(postgres('postgresql://placeholder:placeholder@localhost:5432/placeholder', { max: 1 }), { schema });
-    return _db;
-  }
-
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!databaseUrl) {
     throw new Error('❌ DATABASE_URL missing. Check your environment variables.');
   }

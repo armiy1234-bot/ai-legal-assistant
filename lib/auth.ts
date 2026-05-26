@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import { customFetch } from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
 import Google from "next-auth/providers/google";
 import { eq } from "drizzle-orm";
@@ -23,7 +22,7 @@ function VKIDProvider(options: {
     authorization: "https://id.vk.ru/authorize?scope=email,phone",
     token: "https://id.vk.ru/oauth2/auth",
     client: { token_endpoint_auth_method: "none" as const },
-    [customFetch]: async (url: RequestInfo | URL, init?: RequestInit) => {
+    customFetch: async (url: RequestInfo | URL, init?: RequestInit) => {
       if (String(url).includes("/oauth2/auth")) {
         if (init?.body) {
           let bodyStr: string;
