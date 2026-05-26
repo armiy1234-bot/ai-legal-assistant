@@ -28,7 +28,8 @@ function VKIDProvider(options: {
       url: "https://id.vk.com/oauth2/auth",
       async request({ params, provider }: any) {
         // Извлекаем device_id из callback URL параметров
-        const deviceId = params.device_id || params.ext_id || "browser";
+        // VK ID возвращает device_id в callback URL, его нужно передать в запрос токена
+        const deviceId = params.device_id || "browser";
         
         const body = new URLSearchParams({
           grant_type: "authorization_code",
