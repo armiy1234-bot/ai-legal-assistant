@@ -122,7 +122,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
                   email: profile.email || null,
                   name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null,
                   avatar: profile.avatar || null,
-                }).returning();
+                } as any).returning();
                 dbUser = created;
               } else {
                 // Обновляем существующего пользователя
