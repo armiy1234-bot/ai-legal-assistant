@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "id": "ccb3eee7-601f-4355-839f-242975c93358",
+      "name": "Test User",
+      "email": "test@example.com",
+      "phone": "79011195792",
+      "role": "user",
+      "queriesCount": 4,
+      "createdAt": "2026-05-20T10:00:00Z"
+    }
+  ],
+  "lastSync": "2026-05-22T11:00:00Z"
+}
