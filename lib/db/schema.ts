@@ -6,6 +6,9 @@ export const users = pgTable('users', {
   vkId: text('vk_id').unique(),
   telegramId: text('telegram_id').unique(),
   phone: text('phone').unique(),
+  email: text('email'),
+  name: text('name'),
+  avatar: text('avatar'),
   role: text('role').default('user').notNull(), // user, premium_user, admin, lawyer
   dailyFreeQueries: integer('daily_free_queries').default(0),
   lastQueryDate: timestamp('last_query_date').defaultNow(),

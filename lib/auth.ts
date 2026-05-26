@@ -7,10 +7,7 @@ import { users as usersTable } from "@/lib/db/schema";
 
 function VKIDProvider(options: { 
   clientId: string; 
-  clientSecret: string; 
-  deviceId: string | null;
-  state: string | null;
-  extId: string | null;
+  clientSecret: string;
 }) {
   return {
     id: "vk",
@@ -19,66 +16,67 @@ function VKIDProvider(options: {
     clientId: options.clientId,
     clientSecret: options.clientSecret,
     checks: ["pkce"] as ("pkce" | "state" | "none")[],
-    authorization: "https://id.vk.ru/authorize?scope=email,phone",
-    token: "https://id.vk.ru/oauth2/auth",
-    client: { token_endpoint_auth_method: "none" as const },
-    customFetch: async (url: RequestInfo | URL, init?: RequestInit) => {
-      if (String(url).includes("/oauth2/auth")) {
-        if (init?.body) {
-          let bodyStr: string;
-          if (typeof init.body === "string") {
-            bodyStr = init.body;
-          } else if (init.body instanceof URLSearchParams) {
-            bodyStr = init.body.toString();
-          } else {
-            return fetch(url, init);
-          }
-          const params = new URLSearchParams(bodyStr);
-          if (options.deviceId) {
-            params.set("device_id", options.deviceId);
-          }
-          const stateVal = (options.state || options.extId || "");
-          if (stateVal) {
-            params.set("state", stateVal);
-          }
-          init.body = params.toString();
+    authorization: {
+      url: "https://id.vk.com/authorize",
+      params: {
+        scope: "email phone",
+        response_type: "code",
+      },
+    },
+    token: {
+      url: "https://id.vk.com/oauth2/auth",
+      async request({ params, provider }: any) {
+        const body = new URLSearchParams({
+          grant_type: "authorization_code",
+          client_id: provider.clientId,
+          code: params.code,
+          redirect_uri: provider.callbackUrl,
+          code_verifier: params.code_verifier,
+        });
+        
+        const res = await fetch(provider.token.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        });
+        
+        if (!res.ok) {
+          const error = await res.text();
+          console.error("[VK OAuth] Token error:", error);
+          throw new Error(`Token request failed: ${error}`);
         }
-        const res = await fetch(url, init);
-        if (res.ok) {
-          const json = await res.clone().json();
-          if (json.id_token) {
-            delete json.id_token;
-            return new Response(JSON.stringify(json), {
-              status: res.status,
-              statusText: res.statusText,
-              headers: res.headers,
-            });
-          }
-        }
+        
         return res;
-      }
-      return fetch(url, init);
+      },
     },
     userinfo: {
-      url: "https://id.vk.ru/oauth2/user_info",
+      url: "https://id.vk.com/oauth2/user_info",
       async request({ tokens, provider }: any) {
-        const res = await fetch(provider.userinfo?.url, {
+        const res = await fetch(provider.userinfo.url, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({
             client_id: provider.clientId,
             access_token: tokens.access_token,
           }),
-        }).then((r) => r.json());
-        return res.user;
+        });
+        
+        if (!res.ok) {
+          const error = await res.text();
+          console.error("[VK OAuth] Userinfo error:", error);
+          throw new Error(`Userinfo request failed: ${error}`);
+        }
+        
+        const json = await res.json();
+        return json.user;
       },
     },
     profile(profile: any) {
       return {
         id: profile.user_id,
-        name: [profile.first_name, profile.last_name].filter(Boolean).join(" "),
+        name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null,
         email: profile.email ?? null,
-        image: profile.avatar,
+        image: profile.avatar ?? null,
         phone: profile.phone ?? null,
       };
     },
@@ -86,30 +84,12 @@ function VKIDProvider(options: {
   };
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
-  let vkDeviceId: string | null = null;
-  let vkState: string | null = null;
-  let vkExtId: string | null = null;
-
-  if (req) {
-    try {
-      const url = new URL(req.url);
-      if (url.pathname.includes("/callback/vk")) {
-        vkDeviceId = url.searchParams.get("device_id");
-        vkState = url.searchParams.get("state");
-        vkExtId = url.searchParams.get("ext_id");
-      }
-    } catch {}
-  }
-
+export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
   return {
     providers: [
       VKIDProvider({
         clientId: process.env.VK_CLIENT_ID || "",
         clientSecret: process.env.VK_CLIENT_SECRET || "",
-        deviceId: vkDeviceId,
-        state: vkState,
-        extId: vkExtId,
       }),
       Google((process.env.OAUTH_GOOGLE_CLIENT_ID && process.env.OAUTH_GOOGLE_CLIENT_SECRET) ? {
         clientId: process.env.OAUTH_GOOGLE_CLIENT_ID,
@@ -133,20 +113,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async (req) => {
             const db = getDb();
             if (account.provider === "vk") {
               dbUser = await db.query.users.findFirst({
-                where: eq(usersTable.vkId, String(profile.user_id)),
+                where: eq(usersTable.vk_id, String(profile.user_id)),
               });
               if (!dbUser) {
                 const [created] = await db.insert(usersTable).values({
-                  vkId: String(profile.user_id),
+                  vk_id: String(profile.user_id),
                   phone: (profile as any).phone || null,
+                  email: profile.email || null,
+                  name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null,
+                  avatar: profile.avatar || null,
                 }).returning();
                 dbUser = created;
+              } else {
+                // Обновляем существующего пользователя
+                await db.update(usersTable)
+                  .set({
+                    email: profile.email || dbUser.email,
+                    name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || dbUser.name,
+                    avatar: profile.avatar || dbUser.avatar,
+                    phone: (profile as any).phone || dbUser.phone,
+                  })
+                  .where(eq(usersTable.id, dbUser.id));
               }
             } else if (account.provider === "google") {
               const email = profile.email || account.providerAccountId;
               dbUser = await db.query.users.findFirst({
-                where: eq(usersTable.phone, email),
+                where: eq(usersTable.email, email),
               });
+              if (!dbUser) {
+                const [created] = await db.insert(usersTable).values({
+                  email: email,
+                  name: profile.name || null,
+                  avatar: profile.image || null,
+                }).returning();
+                dbUser = created;
+              } else {
+                await db.update(usersTable)
+                  .set({
+                    name: profile.name || dbUser.name,
+                    avatar: profile.image || dbUser.avatar,
+                  })
+                  .where(eq(usersTable.id, dbUser.id));
+              }
             }
           } catch (dbErr) {
         console.error("[auth:jwt] DB error during sign-in:", dbErr);
