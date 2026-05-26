@@ -147,7 +147,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
                   email: email,
                   name: profile.name || null,
                   avatar: profile.image || null,
-                }).returning();
+                } as any).returning();
                 dbUser = created;
               } else {
                 await db.update(usersTable)
