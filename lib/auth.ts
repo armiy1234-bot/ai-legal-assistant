@@ -130,9 +130,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
                   .set({
                     email: profile.email || dbUser.email,
                     name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || dbUser.name,
-                    avatar: profile.avatar || dbUser.avatar,
+                    avatar: profile.avatar || dbUser.avatar || null,
                     phone: (profile as any).phone || dbUser.phone,
-                  })
+                  } as any)
                   .where(eq(usersTable.id, dbUser.id));
               }
             } else if (account.provider === "google") {
