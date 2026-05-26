@@ -21,6 +21,7 @@ function VKIDProvider(options: {
       params: {
         scope: "email phone",
         response_type: "code",
+        device_id: "browser",
       },
     },
     token: {
@@ -32,6 +33,7 @@ function VKIDProvider(options: {
           code: params.code,
           redirect_uri: provider.callbackUrl,
           code_verifier: params.code_verifier,
+          device_id: params.device_id || "browser",
         });
         
         const res = await fetch(provider.token.url, {
