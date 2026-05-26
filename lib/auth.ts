@@ -113,11 +113,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
             const db = getDb();
             if (account.provider === "vk") {
               dbUser = await db.query.users.findFirst({
-                where: eq(usersTable.vk_id, String(profile.user_id)),
+                where: eq(usersTable.vkId, String(profile.user_id)),
               });
               if (!dbUser) {
                 const [created] = await db.insert(usersTable).values({
-                  vk_id: String(profile.user_id),
+                  vkId: String(profile.user_id),
                   phone: (profile as any).phone || null,
                   email: profile.email || null,
                   name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null,
