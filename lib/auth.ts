@@ -153,8 +153,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
                 await db.update(usersTable)
                   .set({
                     name: profile.name || dbUser.name,
-                    avatar: profile.image || dbUser.avatar,
-                  })
+                    avatar: profile.image || dbUser.avatar || null,
+                  } as any)
                   .where(eq(usersTable.id, dbUser.id));
               }
             }
