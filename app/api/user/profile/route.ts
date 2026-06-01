@@ -4,6 +4,8 @@ import { users, legalQueries, lawyerConsultations, usageLogs } from "@/lib/db/sc
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await auth();
