@@ -21,30 +21,17 @@ function VKIDProvider(options: {
       params: {
         scope: "email phone",
         response_type: "code",
-        device_id: "browser",
       },
     },
     token: {
       url: "https://id.vk.com/oauth2/auth",
       async request({ params, provider }: any) {
-        // Извлекаем device_id из callback URL параметров
-        // VK ID возвращает device_id в callback URL, его нужно передать в запрос токена
-        const deviceId = params.device_id || "browser";
-        
         const body = new URLSearchParams({
           grant_type: "authorization_code",
           client_id: provider.clientId,
-          client_secret: provider.clientSecret,
           code: params.code,
           redirect_uri: provider.callbackUrl,
           code_verifier: params.code_verifier,
-          device_id: deviceId,
-        });
-        
-        console.log("[VK OAuth] Token request:", {
-          device_id: deviceId,
-          code: params.code?.substring(0, 20) + "...",
-          redirect_uri: provider.callbackUrl,
         });
         
         const res = await fetch(provider.token.url, {
@@ -53,22 +40,13 @@ function VKIDProvider(options: {
           body: body.toString(),
         });
         
-        const responseText = await res.text();
-        console.log("[VK OAuth] Token response:", responseText);
-        
         if (!res.ok) {
-          throw new Error(`Token request failed: ${responseText}`);
+          const error = await res.text();
+          console.error("[VK OAuth] Token error:", error);
+          throw new Error(`Token request failed: ${error}`);
         }
         
-        // Парсим JSON и возвращаем в формате, ожидаемом NextAuth
-        const tokens = JSON.parse(responseText);
-        return {
-          tokens: {
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            expires_at: tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : undefined,
-          },
-        };
+        return res;
       },
     },
     userinfo: {
