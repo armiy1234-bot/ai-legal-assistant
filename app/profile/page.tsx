@@ -68,7 +68,7 @@ export default async function ProfilePage() {
     })),
     consultations: consultations.map(c => ({
       id: c.id,
-      status: c.status,
+      status: c.status ?? "pending",
       lawyerId: c.lawyerId,
       scheduledAt: toISO(c.scheduledAt),
       createdAt: toISO(c.createdAt),
