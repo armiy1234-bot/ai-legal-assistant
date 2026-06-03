@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
 import Google from "next-auth/providers/google";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users as usersTable } from "@/lib/db/schema";
@@ -27,13 +27,13 @@ function VKIDProvider(options: {
     token: {
       url: "https://id.vk.com/oauth2/auth",
       async request({ params, provider }: any) {
-        // Read device_id from cookie (set by middleware.ts on callback)
-        const cookieStore = cookies();
-        const deviceId = params.device_id 
-          || cookieStore.get("__Secure-authjs.vk.device_id")?.value
+        // Read device_id from request headers (set by middleware.ts on callback)
+        const reqHeaders = headers();
+        const deviceId = reqHeaders.get("x-vk-device-id")
+          || params.device_id
           || "";
-        const state = params.state
-          || cookieStore.get("__Secure-authjs.vk.state")?.value
+        const state = reqHeaders.get("x-vk-state")
+          || params.state
           || "";
 
         const body = new URLSearchParams({
@@ -47,7 +47,7 @@ function VKIDProvider(options: {
           state: state,
         });
         
-        console.log("[VK OAuth] Token request body keys:", [...body.keys()]);
+        console.log("[VK OAuth] Token request — device_id:", deviceId ? `${deviceId.substring(0,20)}...` : "MISSING");
         
         const res = await fetch(provider.token.url, {
           method: "POST",
@@ -55,13 +55,27 @@ function VKIDProvider(options: {
           body: body.toString(),
         });
         
-        if (!res.ok) {
-          const error = await res.text();
-          console.error("[VK OAuth] Token error:", error);
-          throw new Error(`Token request failed: ${error}`);
+        const rawText = await res.text();
+        
+        // VK returns HTTP 200 even on errors — check body for error field
+        let json: any;
+        try {
+          json = JSON.parse(rawText);
+        } catch {
+          console.error("[VK OAuth] Non-JSON response:", rawText.substring(0, 500));
+          throw new Error(`Token request returned non-JSON: ${rawText.substring(0, 200)}`);
         }
         
-        const json = await res.json();
+        if (json.error) {
+          console.error("[VK OAuth] VK error response:", json);
+          throw new Error(`VK token error: ${json.error} — ${json.error_description}`);
+        }
+        
+        if (!res.ok) {
+          console.error("[VK OAuth] HTTP error:", res.status, rawText.substring(0, 500));
+          throw new Error(`Token request failed: HTTP ${res.status}`);
+        }
+        
         console.log("[VK OAuth] Token response keys:", Object.keys(json));
         
         // Strip id_token — VK uses non-standard JWT fields (iis/app vs iss/aud)

@@ -3,11 +3,15 @@ import type { NextRequest } from "next/server";
 
 /**
  * VK ID OAuth middleware — captures device_id from callback URL
- * and stores it in a cookie for the token exchange step.
+ * and passes it via request headers for the token exchange step.
  *
  * VK ID code_v2 flow generates a device_id during authorization
  * and expects it back during token exchange. AuthJS v5 doesn't
  * forward non-standard callback params to the token request.
+ *
+ * We use request headers (not cookies) because cookies set by
+ * middleware are on the *response* and not readable by cookies()
+ * in the same request lifecycle.
  */
 export function middleware(request: NextRequest) {
   const url = new URL(request.url);
@@ -26,40 +30,15 @@ export function middleware(request: NextRequest) {
       code_verifier: codeVer,
     });
 
-    const response = NextResponse.next();
+    // Pass device_id via request headers (works in same request lifecycle)
+    const requestHeaders = new Headers(request.headers);
+    if (deviceId) requestHeaders.set("x-vk-device-id", deviceId);
+    if (extId) requestHeaders.set("x-vk-ext-id", extId);
+    if (state) requestHeaders.set("x-vk-state", state);
 
-    // Store device_id in a cookie for the token exchange step
-    if (deviceId) {
-      response.cookies.set("__Secure-authjs.vk.device_id", deviceId, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 900, // 15 minutes
-      });
-    }
-
-    if (extId) {
-      response.cookies.set("__Secure-authjs.vk.ext_id", extId, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 900,
-      });
-    }
-
-    if (state) {
-      response.cookies.set("__Secure-authjs.vk.state", state, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 900,
-      });
-    }
-
-    return response;
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
   }
 
   return NextResponse.next();
