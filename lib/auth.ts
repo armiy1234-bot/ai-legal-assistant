@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
 import Google from "next-auth/providers/google";
+import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users as usersTable } from "@/lib/db/schema";
@@ -26,13 +27,27 @@ function VKIDProvider(options: {
     token: {
       url: "https://id.vk.com/oauth2/auth",
       async request({ params, provider }: any) {
+        // Read device_id from cookie (set by middleware.ts on callback)
+        const cookieStore = cookies();
+        const deviceId = params.device_id 
+          || cookieStore.get("__Secure-authjs.vk.device_id")?.value
+          || "";
+        const state = params.state
+          || cookieStore.get("__Secure-authjs.vk.state")?.value
+          || "";
+
         const body = new URLSearchParams({
           grant_type: "authorization_code",
           client_id: provider.clientId,
+          client_secret: provider.clientSecret,
           code: params.code,
           redirect_uri: provider.callbackUrl,
           code_verifier: params.code_verifier,
+          device_id: deviceId,
+          state: state,
         });
+        
+        console.log("[VK OAuth] Token request body keys:", [...body.keys()]);
         
         const res = await fetch(provider.token.url, {
           method: "POST",
@@ -46,7 +61,12 @@ function VKIDProvider(options: {
           throw new Error(`Token request failed: ${error}`);
         }
         
-        return res;
+        const json = await res.json();
+        console.log("[VK OAuth] Token response keys:", Object.keys(json));
+        
+        // Strip id_token — VK uses non-standard JWT fields (iis/app vs iss/aud)
+        const { id_token, ...cleanJson } = json;
+        return Response.json(cleanJson);
       },
     },
     userinfo: {
