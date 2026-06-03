@@ -6,7 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Scale, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
+import { useRouter } from 'next/navigation';
+
 export default function LoginPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-transparent to-emerald-50 p-4">
       <div className="w-full max-w-md">
