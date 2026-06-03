@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import NodemailerProvider from "next-auth/providers/nodemailer";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
@@ -121,9 +122,37 @@ function VKIDProvider(options: {
 export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
   return {
     providers: [
+      // Custom VK OAuth provider (may not work due to AuthJS internals — see /api/auth/vk)
       VKIDProvider({
         clientId: process.env.VK_CLIENT_ID || "",
         clientSecret: process.env.VK_CLIENT_SECRET || "",
+      }),
+      // Credentials provider for standalone VK auth flow
+      Credentials({
+        id: "vk-custom",
+        name: "VK Custom",
+        credentials: {
+          userId: { label: "User ID", type: "text" },
+        },
+        async authorize(credentials) {
+          if (!credentials?.userId) return null;
+          try {
+            const db = getDb();
+            const user = await db.query.users.findFirst({
+              where: eq(usersTable.id, credentials.userId as string),
+            });
+            if (!user) return null;
+            return {
+              id: user.id,
+              name: user.name || undefined,
+              email: user.email || undefined,
+              image: user.avatar || undefined,
+            };
+          } catch (err) {
+            console.error("[vk-custom] DB lookup failed:", err);
+            return null;
+          }
+        },
       }),
       Google((process.env.OAUTH_GOOGLE_CLIENT_ID && process.env.OAUTH_GOOGLE_CLIENT_SECRET) ? {
         clientId: process.env.OAUTH_GOOGLE_CLIENT_ID,
